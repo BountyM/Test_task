@@ -49,12 +49,10 @@ func (h *Handler) getResults(c *gin.Context) {
 		}
 	}()
 
+	res := responseData{}
 	select {
-	case res := <-doneChan:
-		c.JSON(res.status, res.body)
-		return
-	case res := <-timeChan:
-		c.JSON(res.status, res.body)
-		return
+	case res = <-doneChan:
+	case res = <-timeChan:
 	}
+	c.JSON(res.status, res.body)
 }
