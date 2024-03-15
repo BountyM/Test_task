@@ -33,22 +33,17 @@ func GetCatIdsFromPC(db *sql.DB, id_product int) ([]int, error) {
 func MaxMarkInCats(db *sql.DB) (map[string]string, error) {
 
 	rows, err := db.Query(`
-	select cn, pn, mark from 
-	(select p.name as pn,  p.mark, c.name as cn
-	from categories c
-	left join products_categories pc 
-	on pc.id_categories = c.id 
-	left join products p 
-	on p.id = pc.id_product ) t1
-	WHERE mark = ( SELECT MAX( t2.mark )
-				FROM 
-				(select p.name as pn,  p.mark, c.name as cn
-				from categories c
-				left join products_categories pc 
-				on pc.id_categories = c.id 
-				left join products p 
-				on p.id = pc.id_product ) t2
-				WHERE t1.cn = t2.cn )
+	WITH cte AS (select p.id , p.name , p.mark, c.id as id_cat, c.name as name_cat,
+		RANK() OVER ( PARTITION BY c.id
+					ORDER BY mark DESC
+					) AS r
+		from products p 
+		left join products_categories pc on p.id =pc.id_product 
+		left join categories c on pc.id_categories =c.id 
+		)
+		SELECT name_cat, name, mark
+		FROM cte
+		WHERE r = 1
 	`)
 	if err != nil {
 		log.Println("Query:", err)
@@ -75,11 +70,17 @@ func MaxMarkInCats(db *sql.DB) (map[string]string, error) {
 func MinMarkInCats(db *sql.DB) (map[string]string, error) {
 
 	rows, err := db.Query(`
-	select cn, pn, mark from v as t1
-		WHERE mark = ( SELECT MIN( t2.mark )
-					FROM 
-					v as t2
-					WHERE t1.cn = t2.cn )
+	WITH cte AS (select p.id , p.name , p.mark, c.id as id_cat, c.name as name_cat,
+		RANK() OVER ( PARTITION BY c.id
+					ORDER BY mark ASC
+					) AS r
+		from products p 
+		left join products_categories pc on p.id =pc.id_product 
+		left join categories c on pc.id_categories =c.id 
+		)
+		SELECT name_cat, name, mark
+		FROM cte
+		WHERE r = 1
 	`)
 	if err != nil {
 		log.Println("Query:", err)
