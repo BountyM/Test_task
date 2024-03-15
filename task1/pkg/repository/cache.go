@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"errors"
 	"log"
 	"sync"
 	"time"
@@ -34,16 +33,10 @@ func (c *Cache) Get(data int64) (int64, error) {
 			return res, err
 		}
 		c.Set(data, res)
+		return res, nil
 	} else {
 		return res, nil
 	}
-	c.RLock()
-	res, ok = c.resMap[data]
-	c.RUnlock()
-	if !ok {
-		return res, errors.New("error cach Get")
-	}
-	return res, nil
 }
 
 func (c *Cache) GetSlice(data []int64) ([]int64, error) {
