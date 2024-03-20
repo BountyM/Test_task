@@ -11,8 +11,8 @@ func GetProduct(db *sql.DB, id int) (models.Product, error) {
 
 	rows, err := db.Query(`
 	SELECT p.id, p.name, p.mark, c.id , c.name 
-	FROM products p 
-	LEFT JOIN products_categories pc
+	FROM  products_categories pc
+	LEFT JOIN products p
 	ON p.id =pc.id_product 
 	left join categories c 
 	on pc.id_categories =c.id 
