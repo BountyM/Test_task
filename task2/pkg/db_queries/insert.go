@@ -2,7 +2,7 @@ package dbqueries
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"math/rand"
 	"task2/models"
 	"time"
@@ -29,7 +29,10 @@ func InsertRandom(db *sql.DB, n int) error {
 	}
 
 	for _, p := range products {
-		InsertProduct(db, p)
+		err := InsertProduct(db, p)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -50,29 +53,26 @@ func randSeq(n int) string {
 }
 
 // добавляет продукт и категории в таблицы
-func InsertProduct(db *sql.DB, p models.Product) bool {
-
-	if IsProductValid(db, p) {
-		log.Println("Product", p.Name, "already exists!")
-		return false
+func InsertProduct(db *sql.DB, p models.Product) error {
+	if flag, err := IsProductValid(db, p); err != nil {
+		return err
+	} else if flag {
+		return fmt.Errorf("product %s already exists", p.Name)
 	}
 
 	stmt1, err := db.Prepare("INSERT INTO products(id, name, mark) values($1,$2,$3)")
 	if err != nil {
-		log.Println("Addproduct:", err)
-		return false
+		return err
 	}
 
 	stmt2, err := db.Prepare("INSERT INTO categories(id, name) values($1,$2)")
 	if err != nil {
-		log.Println("Addproduct:", err)
-		return false
+		return err
 	}
 
 	stmt3, err := db.Prepare("INSERT INTO products_categories(id_product, id_categories) values($1,$2)")
 	if err != nil {
-		log.Println("Addproduct:", err)
-		return false
+		return err
 	}
 
 	stmt1.Exec(p.Id, p.Name, p.Mark)
@@ -81,16 +81,15 @@ func InsertProduct(db *sql.DB, p models.Product) bool {
 		stmt3.Exec(p.Id, v.Id)
 	}
 
-	return true
+	return nil
 }
 
 // проверка на наличие продукта
-func IsProductValid(db *sql.DB, p models.Product) bool {
+func IsProductValid(db *sql.DB, p models.Product) (bool, error) {
 
 	rows, err := db.Query("SELECT * FROM products WHERE id = $1 \n", p.Id)
 	if err != nil {
-		log.Println(err)
-		return false
+		return false, err
 	}
 
 	temp := models.Product{}
@@ -101,12 +100,10 @@ func IsProductValid(db *sql.DB, p models.Product) bool {
 	for rows.Next() {
 		err = rows.Scan(&c1, &c2, &c3)
 		if err != nil {
-			log.Println(err)
-			return false
+			return false, err
 		}
 		temp = models.Product{Id: c1, Name: c2, Mark: c3, Categories: []models.Category{}}
 	}
 
-	return p.Name == temp.Name
-
+	return p.Name == temp.Name, nil
 }

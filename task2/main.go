@@ -13,19 +13,20 @@ func main() {
 	// коннуктимся к бд
 	db, err := dbqueries.ConnectPostgres()
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 
 	// заполняем бд рандомными значениями
-	dbqueries.InsertRandom(db, 10)
+	if err := dbqueries.InsertRandom(db, 10); err != nil {
+		log.Fatal(err)
+	}
 
 	// получаем значение по id
 	p, err := dbqueries.GetProduct(db, 3)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
-	fmt.Println("print product id = 3")
+
 	PtintProduct(p)
 
 	fmt.Println("-------------")
@@ -52,6 +53,7 @@ func main() {
 }
 
 func PtintProduct(p models.Product) {
+	fmt.Printf("print product id = %d\n", p.Id)
 	fmt.Printf("Product: %s\nMark: %v\nCategories: ", p.Name, p.Mark)
 	for _, v := range p.Categories {
 		fmt.Print(v.Name + " ")

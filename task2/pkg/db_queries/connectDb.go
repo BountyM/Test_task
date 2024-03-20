@@ -3,7 +3,6 @@ package dbqueries
 import (
 	"database/sql"
 	"fmt"
-	"log"
 )
 
 var (
@@ -28,7 +27,6 @@ func ConnectPostgres() (*sql.DB, error) {
 
 	db, err := sql.Open("postgres", conn)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 
