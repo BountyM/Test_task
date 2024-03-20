@@ -8,65 +8,37 @@ import (
 
 // получает продукт из бд по id
 func GetProduct(db *sql.DB, id int) (models.Product, error) {
-	cat_ids, err := GetCatIdsFromPC(db, id)
-	if err != nil {
-		return models.Product{}, err
-	}
 
-	categories := make([]models.Category, 0, len(cat_ids))
+	rows, err := db.Query(`
+	SELECT p.id, p.name, p.mark, c.id , c.name 
+	FROM products p 
+	LEFT JOIN products_categories pc
+	ON p.id =pc.id_product 
+	left join categories c 
+	on pc.id_categories =c.id 
+	where p.id = $1
+	order by p.id;
+	`, id)
 
-	for _, i := range cat_ids {
-		temp, err := GetCategory(db, i)
-		if err != nil {
-			return models.Product{}, err
-		}
-		categories = append(categories, temp)
-	}
-
-	rows, err := db.Query("SELECT * FROM products where id = $1\n", id)
 	if err != nil {
 		log.Println("Query:", err)
 		return models.Product{}, err
 	}
 	defer rows.Close()
 
-	var temp models.Product
-	temp.Categories = categories
+	temp_product := models.Product{}
+	temp_categories := models.Category{}
+	cat_slice := make([]models.Category, 0, 10)
 
 	for rows.Next() {
-		err = rows.Scan(&temp.Id, &temp.Name, &temp.Mark)
+		err = rows.Scan(&temp_product.Id, &temp_product.Name, &temp_product.Mark, &temp_categories.Id, &temp_categories.Name)
 		if err != nil {
 			log.Println(err)
 			return models.Product{}, err
 		}
+		cat_slice = append(cat_slice, temp_categories)
 	}
-	return temp, nil
+	temp_product.Categories = cat_slice
+	return temp_product, nil
 
-}
-
-// возвращает maps map[product.id]mark и map[product.id]name
-func GetMapProductIdsOfMarkAndName(db *sql.DB) (map[int]int, map[int]string, error) {
-	productIdsOfMark := make(map[int]int)
-	productIdsOfName := make(map[int]string)
-
-	rows, err := db.Query("SELECT * FROM products")
-	if err != nil {
-		log.Println("Query:", err)
-		return nil, nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var i, m int
-		var n string
-		err = rows.Scan(&i, &n, &m)
-		if err != nil {
-			log.Println(err)
-			return nil, nil, err
-		}
-		productIdsOfMark[i] = m
-		productIdsOfName[i] = n
-	}
-
-	return productIdsOfMark, productIdsOfName, nil
 }

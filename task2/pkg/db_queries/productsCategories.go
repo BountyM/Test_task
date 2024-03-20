@@ -6,29 +6,6 @@ import (
 	"log"
 )
 
-// возвращает [categories.id]
-func GetCatIdsFromPC(db *sql.DB, id_product int) ([]int, error) {
-
-	rows, err := db.Query("SELECT * FROM products_categories where id_product = $1\n", id_product)
-	if err != nil {
-		log.Println("Query:", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	cat_ids := make([]int, 0)
-	for rows.Next() {
-		var temp [2]int
-		err = rows.Scan(&temp[0], &temp[1])
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-		cat_ids = append(cat_ids, temp[1])
-	}
-	return cat_ids, nil
-}
-
 // возвращает map[category.name]product.name с максимальным mark
 func MaxMarkInCats(db *sql.DB) (map[string]string, error) {
 
@@ -112,28 +89,4 @@ func MinMaxMarkInCats(db *sql.DB, minORmax string) (map[string]string, error) {
 	}
 
 	return nil, fmt.Errorf("wrong value of minOrMax")
-}
-
-// возвращает map[category.id][]product.ids
-func GetMapCatsOfProductIds(db *sql.DB) (map[int][]int, error) {
-	mapCatsOfProductIds := make(map[int][]int)
-
-	rows, err := db.Query("SELECT * FROM products_categories")
-	if err != nil {
-		log.Println("Query:", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var c, p int
-		err = rows.Scan(&p, &c)
-		if err != nil {
-			log.Println(err)
-			return nil, err
-		}
-		mapCatsOfProductIds[c] = append(mapCatsOfProductIds[c], p)
-	}
-
-	return mapCatsOfProductIds, nil
 }
